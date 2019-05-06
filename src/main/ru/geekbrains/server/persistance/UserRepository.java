@@ -4,6 +4,7 @@ import com.sun.javafx.binding.StringFormatter;
 import ru.geekbrains.server.User;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class UserRepository {
@@ -16,7 +17,6 @@ public class UserRepository {
 
     public UserRepository(Connection conn) throws SQLException {
         this.conn = conn;
-        // TODO создать таблицу пользователей, если она еще не создана
         prepareStatement = conn.prepareStatement(
                 "create table if not exists users " +
                         "(id int auto_increment primary key, " +
@@ -34,20 +34,31 @@ public class UserRepository {
         prepareStatement.setString(2, user.getPassword());
         prepareStatement.execute();
 
+
     }
 
     public User findByLogin(String login) throws SQLException {
-        // TODO найти пользователя в БД по логину
         String query = String.format("select * from users where login = '%s'", login);
         stmt = conn.createStatement();
         resultSet = stmt.executeQuery(query);
         resultSet.next();
-        return new User (resultSet.getInt(1), resultSet.getString(2), resultSet.getString(3));
+        User user = new User(resultSet.getInt(1), resultSet.getString(2), resultSet.getString(3));
+        resultSet.close();
+        return user;
 
     }
 
-    public List<User> getAllUsers() {
-        // TODO извлечь из БД полный список пользователей
-        return null;
+    public List<User> getAllUsers() throws SQLException {
+        List<User> usersList = new ArrayList<>();
+
+        String query = "select * from users";
+        stmt = conn.createStatement();
+        resultSet = stmt.executeQuery(query);
+        while (resultSet.next()){
+            usersList.add(new User(resultSet.getInt(1), resultSet.getString(2), resultSet.getString(3)));
+
+        }
+        resultSet.close();
+        return usersList;
     }
 }

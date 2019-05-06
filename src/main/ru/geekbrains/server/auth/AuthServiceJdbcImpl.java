@@ -14,8 +14,14 @@ public class AuthServiceJdbcImpl implements AuthService {
     }
 
     @Override
-    public boolean authUser(User user) throws SQLException {
-        User tmp = userRepository.findByLogin(user.getLogin());
+    public boolean authUser(User user) {
+        User tmp = null;
+        try {
+            tmp = userRepository.findByLogin(user.getLogin());
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
         return tmp.getPassword() != null && tmp.getPassword().equals(user.getPassword());
     }
 }
