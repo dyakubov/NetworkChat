@@ -28,7 +28,7 @@ public class ChatServer {
         AuthService authService;
         try {
             Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/network_chat",
-                    "root", "root");
+                    "root", "password");
             UserRepository userRepository = new UserRepository(conn);
             authService = new AuthServiceJdbcImpl(userRepository);
         } catch (SQLException e) {
@@ -64,18 +64,22 @@ public class ChatServer {
                     out.flush();
                     socket.close();
                 }
-                if (user != null && authService.authUser(user)) {
-                    System.out.printf("User %s authorized successful!%n", user.getLogin());
-                    subscribe(user.getLogin(), socket);
-                    out.writeUTF(AUTH_SUCCESS_RESPONSE);
-                    out.flush();
-                } else {
-                    if (user != null) {
-                        System.out.printf("Wrong authorization for user %s%n", user.getLogin());
+                try {
+                    if (user != null && authService.authUser(user)) {
+                        System.out.printf("User %s authorized successful!%n", user.getLogin());
+                        subscribe(user.getLogin(), socket);
+                        out.writeUTF(AUTH_SUCCESS_RESPONSE);
+                        out.flush();
+                    } else {
+                        if (user != null) {
+                            System.out.printf("Wrong authorization for user %s%n", user.getLogin());
+                        }
+                        out.writeUTF(AUTH_FAIL_RESPONSE);
+                        out.flush();
+                        socket.close();
                     }
-                    out.writeUTF(AUTH_FAIL_RESPONSE);
-                    out.flush();
-                    socket.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
                 }
             }
         } catch (IOException ex) {
@@ -124,7 +128,6 @@ public class ChatServer {
     }
 
     public void subscribe(String login, Socket socket) throws IOException {
-        // TODO Проверить, подключен ли уже пользователь. Если да, то отправить клиенту ошибку
         clientHandlerMap.put(login, new ClientHandler(login, socket, this));
         sendUserConnectedMessage(login);
     }
