@@ -18,6 +18,7 @@ public class LoginDialog extends JDialog {
     private JLabel lbPassword;
     private JButton btnLogin;
     private JButton btnCancel;
+    private JButton btnReg;
 
     private boolean connected;
 
@@ -57,6 +58,7 @@ public class LoginDialog extends JDialog {
 
         btnLogin = new JButton("Войти");
         btnCancel = new JButton("Отмена");
+        btnReg = new JButton("Регистрация");
 
         JPanel bp = new JPanel();
         bp.add(btnLogin);
@@ -90,6 +92,14 @@ public class LoginDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 connected = false;
                 dispose();
+            }
+        });
+
+        bp.add(btnReg);
+        btnReg.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                RegistrationDialog regDialog = new RegistrationDialog(LoginDialog.this );
             }
         });
 

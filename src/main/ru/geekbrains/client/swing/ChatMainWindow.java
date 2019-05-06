@@ -162,4 +162,5 @@ public class ChatMainWindow extends JFrame implements MessageReciever {
             }
         });
     }
+
 }
