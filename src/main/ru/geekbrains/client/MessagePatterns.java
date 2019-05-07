@@ -12,6 +12,11 @@ public final class MessagePatterns {
     public static final String AUTH_SUCCESS_RESPONSE = AUTH_TAG + " successful";
     public static final String AUTH_FAIL_RESPONSE = AUTH_TAG + " fail";
 
+    public static final String REG_TAG = "/reg";
+    public static final String REG_PATTERN = REG_TAG + " %s %s";
+    public static final String REG_SUCCESS_RESPONSE = REG_TAG + " successful";
+    public static final String REG_FAIL_RESPONSE = REG_TAG + " fail";
+
     public static final String DISCONNECT = "/disconnect";
     public static final String DISCONNECT_SEND = DISCONNECT + " %s";
 

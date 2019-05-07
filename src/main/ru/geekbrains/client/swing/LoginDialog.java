@@ -99,7 +99,7 @@ public class LoginDialog extends JDialog {
         btnReg.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                RegistrationDialog regDialog = new RegistrationDialog(LoginDialog.this );
+                RegistrationDialog regDialog = new RegistrationDialog(parent, network);
             }
         });
 

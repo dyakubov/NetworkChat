@@ -74,6 +74,7 @@ public class Network implements Closeable {
         out = new DataOutputStream(socket.getOutputStream());
         in = new DataInputStream(socket.getInputStream());
 
+
         sendMessage(String.format(AUTH_PATTERN, login, password));
         String response = in.readUTF();
         if (response.equals(AUTH_SUCCESS_RESPONSE)) {
@@ -81,6 +82,21 @@ public class Network implements Closeable {
             receiverThread.start();
         } else {
             throw new AuthException();
+        }
+    }
+
+
+    public void registration (String login, String password) throws IOException, RegistrationException {
+        socket = new Socket(hostName, port);
+        out = new DataOutputStream(socket.getOutputStream());
+        in = new DataInputStream(socket.getInputStream());
+
+        sendMessage(String.format(REG_PATTERN, login, password));
+        String response = in.readUTF();
+        if (response.startsWith(REG_FAIL_RESPONSE)){
+            throw new RegistrationException("Неуспешная регистрация");
+        } else {
+
         }
     }
 

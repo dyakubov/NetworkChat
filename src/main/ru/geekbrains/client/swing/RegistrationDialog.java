@@ -1,19 +1,33 @@
 package ru.geekbrains.client.swing;
 
+import ru.geekbrains.client.Network;
+import ru.geekbrains.client.RegistrationException;
+import ru.geekbrains.server.persistance.UserRepository;
+
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import java.io.IOException;
+import java.sql.SQLException;
 
 public class RegistrationDialog extends JDialog {
+
     private JTextField tfUsername;
-    private JPasswordField pfPassword;
+    private JPasswordField pf1Password;
+    private JPasswordField pf2Password;
     private JLabel lbUsername;
     private JLabel lbPassword;
-    private JButton btnLogin;
+    private JButton btnSend;
     private JButton btnCancel;
 
-    public RegistrationDialog (LoginDialog loginDialog){
-        setTitle("Регистрация");
+    private boolean registered;
+
+    public RegistrationDialog (Frame parent, Network network){
+
+        super(parent, "Регистрация", true);
 
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints cs = new GridBagConstraints();
@@ -38,11 +52,11 @@ public class RegistrationDialog extends JDialog {
         cs.gridwidth = 1;
         panel.add(lbPassword, cs);
 
-        pfPassword = new JPasswordField(20);
+        pf1Password = new JPasswordField(20);
         cs.gridx = 1;
         cs.gridy = 1;
         cs.gridwidth = 2;
-        panel.add(pfPassword, cs);
+        panel.add(pf1Password, cs);
         panel.setBorder(new LineBorder(Color.GRAY));
 
 
@@ -53,22 +67,78 @@ public class RegistrationDialog extends JDialog {
         cs.gridwidth = 1;
         panel.add(lbPassword, cs);
 
-        pfPassword = new JPasswordField(20);
+        pf2Password = new JPasswordField(20);
         cs.gridx = 1;
         cs.gridy = 2;
         cs.gridwidth = 2;
-        panel.add(pfPassword, cs);
+        panel.add(pf2Password, cs);
         panel.setBorder(new LineBorder(Color.GRAY));
 
-        btnLogin = new JButton("Отправить");
+        btnSend = new JButton("Отправить");
         btnCancel = new JButton("Отмена");
 
+        btnCancel.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
+
+        btnSend.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String login = tfUsername.getText();
+                String password1 = String.valueOf(pf1Password.getPassword());
+                String password2 = String.valueOf(pf2Password.getPassword());
+
+                if (!login.isEmpty() || !password1.isEmpty()) {
+                    if (password1.equals(password2)) {
+                        try {
+                            network.registration(login, password1);
+                            JOptionPane.showMessageDialog(RegistrationDialog.this,
+                                    "Вы успешно зарегистрировались",
+                                    "Успешная регистрация",
+                                    JOptionPane.INFORMATION_MESSAGE);
+                            dispose();
+                        } catch (IOException | RegistrationException ex) {
+                            JOptionPane.showMessageDialog(RegistrationDialog.this,
+                                    ex.getMessage(),
+                                    "Неуспешная регистрация",
+                                    JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(RegistrationDialog.this,
+                                "Пароли не совпадают",
+                                "Ошибка",
+                                JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(RegistrationDialog.this,
+                            "Введите логин/пароль",
+                            "Ошибка",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+                dispose();
+            }
+        });
+
         JPanel bp = new JPanel();
-        bp.add(btnLogin);
+        bp.add(btnSend);
+        bp.add(btnCancel);
+        getContentPane().add(panel, BorderLayout.CENTER);
+        getContentPane().add(bp, BorderLayout.PAGE_END);
 
         pack();
         setResizable(false);
-        setLocationRelativeTo(loginDialog);
+        setLocationRelativeTo(parent);
         setVisible(true);
+    }
+
+    public boolean isRegistered() {
+
+        return registered;
     }
 }
