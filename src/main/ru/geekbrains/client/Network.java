@@ -140,8 +140,10 @@ public class Network implements Closeable {
     public void changeLogin(String newLogin) throws IOException, ChangeLoginException {
         sendMessage(String.format(CHANGE_LOGIN_PATTERN, login, newLogin));
         String response = in.readUTF();
+        System.out.println("Ответ сервера " + response );
         if (response.equals(CHANGE_LOGIN_SUCCESS_RESPONSE)){
             this.login = newLogin;
+
         } else throw new ChangeLoginException("Смена логина не удалась");
     }
 }

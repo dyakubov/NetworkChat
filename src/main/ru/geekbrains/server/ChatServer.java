@@ -196,13 +196,14 @@ public class ChatServer {
         System.out.println("Try to change login");
         try {
             userRepository.updateUserLogin(textParts[2], textParts[3]);
-            System.out.printf(CHANGE_LOGIN_SUCCESS_RESPONSE, textParts[2]);
+            ClientHandler clientHandler = clientHandlerMap.get(textParts[2]);
+            clientHandler.sendUserUpdateLoginMessage(textParts[2], textParts[3]);
             //clientHandlerMap.get(textParts[1]).sendUserUpdateLoginMessage(textParts[1], textParts[2]);
 
 //        } catch (IOException e) {
 //            System.err.println("Error during sending login update");
 //            e.printStackTrace();
-        } catch (SQLException e){
+        } catch (SQLException | IOException e){
             System.err.println("Error during updating login in DB");
             e.printStackTrace();
             throw new ChangeLoginException("Error during updating login in DB");

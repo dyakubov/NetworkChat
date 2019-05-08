@@ -51,6 +51,7 @@ public class ClientHandler {
                             System.out.printf("Change login request from %s: %s", login, text);
                             try {
                                 chatServer.changeLogin(text);
+
                             } catch (ChangeLoginException e) {
                                 e.printStackTrace();
                             }

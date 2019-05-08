@@ -61,6 +61,7 @@ public class ChangeLoginForm extends JDialog {
                                 "Логин успешно изменен",
                                 "Информационное сообщение",
                                 JOptionPane.INFORMATION_MESSAGE);
+                        dispose();
                     } catch (IOException | ChangeLoginException ex) {
                         JOptionPane.showMessageDialog(ChangeLoginForm.this,
                                 ex.getMessage(),
