@@ -1,6 +1,7 @@
 package ru.geekbrains.server;
 
 import ru.geekbrains.client.AuthException;
+import ru.geekbrains.client.ChangeLoginException;
 import ru.geekbrains.client.RegistrationException;
 import ru.geekbrains.client.TextMessage;
 import ru.geekbrains.server.auth.AuthService;
@@ -114,6 +115,7 @@ public class ChatServer {
                         }
                         break;
 
+
                     default:
                         System.out.println("Unknown service message type: " + serviceMessageType);
                         break;
@@ -186,6 +188,24 @@ public class ChatServer {
         } catch (IOException e) {
             System.err.println("Error sending disconnect message");
             e.printStackTrace();
+        }
+    }
+
+    public void changeLogin(String text) throws ChangeLoginException {
+        String[] textParts = text.split(" ");
+        System.out.println("Try to change login");
+        try {
+            userRepository.updateUserLogin(textParts[2], textParts[3]);
+            System.out.printf(CHANGE_LOGIN_SUCCESS_RESPONSE, textParts[2]);
+            //clientHandlerMap.get(textParts[1]).sendUserUpdateLoginMessage(textParts[1], textParts[2]);
+
+//        } catch (IOException e) {
+//            System.err.println("Error during sending login update");
+//            e.printStackTrace();
+        } catch (SQLException e){
+            System.err.println("Error during updating login in DB");
+            e.printStackTrace();
+            throw new ChangeLoginException("Error during updating login in DB");
         }
     }
 }

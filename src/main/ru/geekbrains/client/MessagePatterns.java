@@ -17,6 +17,18 @@ public final class MessagePatterns {
     public static final String REG_SUCCESS_RESPONSE = REG_TAG + " successful";
     public static final String REG_FAIL_RESPONSE = REG_TAG + " fail";
 
+    public static final String CHANGE_TAG = "/change";
+    public static final String CHANGE_LOGIN_PATTERN = CHANGE_TAG + " login %s %s";
+    public static final String CHANGE_LOGIN_SUCCESS_RESPONSE = CHANGE_TAG + " login successful";
+    public static final String CHANGE_LOGIN_FAIL_RESPONSE = CHANGE_TAG + " login fail";
+
+    public static final String CHANGED_LOGIN_SEND = CHANGE_TAG + " %s %s";
+
+    public static final String CHANGE_PASSWORD_PATTERN = CHANGE_TAG + " pass %s %s";
+    public static final String CHANGE_PASSWORD_SUCCESS_RESPONSE = CHANGE_TAG + " pass successful";
+    public static final String CHANGE_PASSWORD_FAIL_RESPONSE = CHANGE_TAG + " pass fail";
+
+
     public static final String DISCONNECT = "/disconnect";
     public static final String DISCONNECT_SEND = DISCONNECT + " %s";
 
@@ -85,4 +97,19 @@ public final class MessagePatterns {
             return null;
         }
     }
+
+    public static String[] parseUserLoginChanged(String text) {
+        String[] parts = text.split(" ");
+        String[] result = new String[2];
+
+        if (parts.length == 3 && parts[0].equals(CHANGE_TAG)) {
+            result[0] = parts[1];
+            result[1] = parts[2];
+            return result;
+        } else {
+            System.out.println("Not a change login message pattern: " + text);
+            return null;
+        }
+    }
+
 }

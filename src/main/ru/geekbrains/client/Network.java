@@ -54,6 +54,14 @@ public class Network implements Closeable {
                             continue;
                         }
 
+                        String[] logins = parseUserLoginChanged(text);
+                        if (logins != null){
+                            messageReciever.changedLogin(logins[0], logins[1]);
+                            continue;
+                        }
+
+
+
                         Set<String> users = parseUserList(text);
                         if (users != null) {
                             messageReciever.updateUserList(users);
@@ -121,9 +129,19 @@ public class Network implements Closeable {
         return login;
     }
 
+
     @Override
     public void close() {
         this.receiverThread.interrupt();
         sendMessage(DISCONNECT);
+    }
+
+    //вставить на форму смены логина
+    public void changeLogin(String newLogin) throws IOException, ChangeLoginException {
+        sendMessage(String.format(CHANGE_LOGIN_PATTERN, login, newLogin));
+        String response = in.readUTF();
+        if (response.equals(CHANGE_LOGIN_SUCCESS_RESPONSE)){
+            this.login = newLogin;
+        } else throw new ChangeLoginException("Смена логина не удалась");
     }
 }

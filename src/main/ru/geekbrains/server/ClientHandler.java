@@ -1,5 +1,6 @@
 package ru.geekbrains.server;
 
+import ru.geekbrains.client.ChangeLoginException;
 import ru.geekbrains.client.TextMessage;
 
 import java.io.DataInputStream;
@@ -46,6 +47,16 @@ public class ClientHandler {
                         } else if (text.equals(USER_LIST_TAG)) {
                             System.out.printf("Sending user list to %s%n", login);
                             sendUserList(chatServer.getUserList());
+                        } else if (text.startsWith(CHANGE_TAG)){
+                            System.out.printf("Change login request from %s: %s", login, text);
+                            try {
+                                chatServer.changeLogin(text);
+                            } catch (ChangeLoginException e) {
+                                e.printStackTrace();
+                            }
+
+                        } else{
+                            System.out.println("Unknown message: " + text);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -72,6 +83,7 @@ public class ClientHandler {
     public void sendConnectedMessage(String login) throws IOException {
         if (socket.isConnected()) {
             out.writeUTF(String.format(CONNECTED_SEND, login));
+
         }
     }
 
@@ -84,6 +96,12 @@ public class ClientHandler {
     public void sendUserList(Set<String> users) throws IOException {
         if (socket.isConnected()) {
             out.writeUTF(String.format(USER_LIST_RESPONSE, String.join(" ", users)));
+        }
+    }
+
+    public void sendUserUpdateLoginMessage (String login, String newLogin) throws IOException{
+        if (socket.isConnected()){
+            out.writeUTF(String.format(CHANGED_LOGIN_SEND, login, newLogin));
         }
     }
 }

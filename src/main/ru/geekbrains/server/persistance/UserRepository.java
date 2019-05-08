@@ -3,6 +3,7 @@ package ru.geekbrains.server.persistance;
 import com.sun.javafx.binding.StringFormatter;
 import ru.geekbrains.server.User;
 
+import javax.sound.midi.Soundbank;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,5 +62,15 @@ public class UserRepository {
         }
         resultSet.close();
         return usersList;
+    }
+
+    public void updateUserLogin (String login, String newValue) throws SQLException{
+        System.out.println("Запуск метода updateUserLogin()");
+        System.out.println("Login: " + login);
+        System.out.println("newValue: " + newValue);
+        prepareStatement = conn.prepareStatement("update users set login = ? where login = ?");
+        prepareStatement.setString(1, newValue);
+        prepareStatement.setString(2, login);
+        prepareStatement.execute();
     }
 }

@@ -15,24 +15,17 @@ import java.util.Set;
 public class ChatMainWindow extends JFrame implements MessageReciever {
 
     private final JList<TextMessage> messageList;
-
     private final DefaultListModel<TextMessage> messageListModel;
-
     private final TextMessageCellRenderer messageCellRenderer;
-
     private final JScrollPane scroll;
-
     private final JPanel sendMessagePanel;
-
     private final JButton sendButton;
-
     private final JTextField messageField;
-
     private final JList<String> userList;
-
     private final DefaultListModel<String> userListModel;
-
     private final Network network;
+    private final JMenuBar menu;
+
 
     public ChatMainWindow() {
         setTitle("Сетевой чат.");
@@ -40,6 +33,13 @@ public class ChatMainWindow extends JFrame implements MessageReciever {
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         setLayout(new BorderLayout());
+
+        menu = new JMenuBar();
+        menu.add(createServicesMenu());
+        setJMenuBar(menu);
+
+
+
 
         messageList = new JList<>();
         messageListModel = new DefaultListModel<>();
@@ -113,6 +113,20 @@ public class ChatMainWindow extends JFrame implements MessageReciever {
         setTitle("Сетевой чат. Пользователь " + network.getLogin());
     }
 
+    private JMenu createServicesMenu(){
+        JMenu services = new JMenu("Сервисы");
+        JMenuItem changeLoginMenuItem = new JMenuItem("Изменить логин");
+        services.add(changeLoginMenuItem);
+        changeLoginMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ChangeLoginForm changeLoginForm = new ChangeLoginForm(ChatMainWindow.this, network);
+            }
+        });
+
+        return services;
+    }
+
     @Override
     public void submitMessage(TextMessage message) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -163,4 +177,14 @@ public class ChatMainWindow extends JFrame implements MessageReciever {
         });
     }
 
+    @Override
+    public void changedLogin(String login, String newLogin) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                userListModel.remove(userListModel.indexOf(login));
+                userListModel.addElement(newLogin);
+            }
+        });
+    }
 }
