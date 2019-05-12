@@ -9,8 +9,8 @@ import java.awt.event.ActionListener;
 
 public class ChangeLoginForm extends JDialog {
 
-    Thread changeLoginThread;
-    Network network;
+    private Thread changeLoginThread;
+    private Network network;
     private JTextField tfUsername;
     private JLabel lbUsername;
     private JButton btnSend;
@@ -41,30 +41,22 @@ public class ChangeLoginForm extends JDialog {
         btnSend = new JButton("Отправить");
         btnCancel = new JButton("Отмена");
 
-        btnCancel.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dispose();
+        btnCancel.addActionListener(e -> dispose());
+
+        btnSend.addActionListener(e -> {
+            String login = tfUsername.getText();
+
+            if (!login.isEmpty()) {
+                formSendChangeLoginRequest(network);
+
+            } else {
+                JOptionPane.showMessageDialog(ChangeLoginForm.this,
+                        "Введите новое имя пользователя",
+                        "Ошибка",
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
             }
-        });
-
-        btnSend.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String login = tfUsername.getText();
-
-                if (!login.isEmpty()) {
-                    formSendChangeLoginRequest(network);
-
-                } else {
-                    JOptionPane.showMessageDialog(ChangeLoginForm.this,
-                            "Введите новое имя пользователя",
-                            "Ошибка",
-                            JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
-                dispose();
-            }
+            dispose();
         });
 
         JPanel bp = new JPanel();
@@ -80,43 +72,41 @@ public class ChangeLoginForm extends JDialog {
     }
 
     private void formSendChangeLoginRequest(Network network) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                changeLoginThread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            String newLogin = tfUsername.getText();
-                            network.sendChangeLoginRequest(newLogin);
-                            Thread.sleep(300);
+        SwingUtilities.invokeLater(() -> {
+            changeLoginThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String newLogin = tfUsername.getText();
+                        network.sendChangeLoginRequest(newLogin);
+                        Thread.sleep(300);
 
 
-                            if (network.loginChanged) {
-                                network.setLogin(newLogin);
-                                network.loginChanged = false;
-                                System.out.println("Смена логина произведена");
+                        if (network.loginChanged) {
+                            network.setLogin(newLogin);
+                            network.loginChanged = false;
+                            network.renameHistoryFile();
+                            System.out.println("Смена логина произведена");
 
-                                JOptionPane.showMessageDialog(ChangeLoginForm.this,
-                                        "Логин успешно изменен",
-                                        "Информационное сообщение",
-                                        JOptionPane.INFORMATION_MESSAGE);
+                            JOptionPane.showMessageDialog(ChangeLoginForm.this,
+                                    "Логин успешно изменен",
+                                    "Информационное сообщение",
+                                    JOptionPane.INFORMATION_MESSAGE);
 
 
-                            } else {
-                                JOptionPane.showMessageDialog(ChangeLoginForm.this,
-                                        "Логин не изменен",
-                                        "Ошибка",
-                                        JOptionPane.ERROR_MESSAGE);
-                            }
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                        } else {
+                            JOptionPane.showMessageDialog(ChangeLoginForm.this,
+                                    "Логин не изменен",
+                                    "Ошибка",
+                                    JOptionPane.ERROR_MESSAGE);
                         }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                });
+                }
+            });
 
-                changeLoginThread.start();
-            }
+            changeLoginThread.start();
         });
 
     }

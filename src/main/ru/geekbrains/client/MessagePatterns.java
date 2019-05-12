@@ -24,13 +24,6 @@ public final class MessagePatterns {
     public static final String CHANGE_LOGIN_SUCCESS_RESPONSE = CHANGE_TAG + " login successful";
     public static final String CHANGE_LOGIN_FAIL_RESPONSE = CHANGE_TAG + " login fail";
 
-    public static final String CHANGED_LOGIN_SEND = CHANGE_TAG + " %s %s";
-
-    public static final String CHANGE_PASSWORD_PATTERN = CHANGE_TAG + " pass %s %s";
-    public static final String CHANGE_PASSWORD_SUCCESS_RESPONSE = CHANGE_TAG + " pass successful";
-    public static final String CHANGE_PASSWORD_FAIL_RESPONSE = CHANGE_TAG + " pass fail";
-
-
     public static final String DISCONNECT = "/disconnect";
     public static final String DISCONNECT_SEND = DISCONNECT + " %s";
 
@@ -109,9 +102,4 @@ public final class MessagePatterns {
     public static boolean parseLoginChangeSuccess(String text) {
         return text.equals(CHANGE_LOGIN_SUCCESS_RESPONSE);
     }
-
-    public void addToHistory (TextMessage textMessage){
-        currentHistoryList.add(textMessage);
-    }
-
 }
