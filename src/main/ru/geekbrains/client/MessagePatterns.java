@@ -1,6 +1,8 @@
 package ru.geekbrains.client;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,11 +45,16 @@ public final class MessagePatterns {
 
     public static final Pattern MESSAGE_REC_PATTERN = Pattern.compile("^/w (\\w+) (.+)", Pattern.MULTILINE);
 
+    public static List<TextMessage> currentHistoryList = new ArrayList<>();
+
     public static TextMessage parseTextMessageRegx(String text, String userTo) {
         Matcher matcher = MESSAGE_REC_PATTERN.matcher(text);
+
         if (matcher.matches()) {
-            return new TextMessage(matcher.group(1), userTo,
+            TextMessage textMessage = new TextMessage(matcher.group(1), userTo,
                     matcher.group(2));
+            currentHistoryList.add(textMessage);
+            return textMessage;
         } else {
             System.out.println("Not a text message pattern: " + text);
             return null;
@@ -88,7 +95,7 @@ public final class MessagePatterns {
         String[] parts = text.split(" ");
         if (parts.length >= 1 && parts[0].equals(USER_LIST_TAG)) {
             Set<String> users = new HashSet<>();
-            for (int i=1; i<parts.length; i++) {
+            for (int i = 1; i < parts.length; i++) {
                 users.add(parts[i]);
             }
             return users;
@@ -98,18 +105,13 @@ public final class MessagePatterns {
         }
     }
 
-    public static String[] parseUserLoginChanged(String text) {
-        String[] parts = text.split(" ");
-        String[] result = new String[2];
 
-        if (parts.length == 3 && parts[0].equals(CHANGE_TAG)) {
-            result[0] = parts[1];
-            result[1] = parts[2];
-            return result;
-        } else {
-            System.out.println("Not a change login message pattern: " + text);
-            return null;
-        }
+    public static boolean parseLoginChangeSuccess(String text) {
+        return text.equals(CHANGE_LOGIN_SUCCESS_RESPONSE);
+    }
+
+    public void addToHistory (TextMessage textMessage){
+        currentHistoryList.add(textMessage);
     }
 
 }

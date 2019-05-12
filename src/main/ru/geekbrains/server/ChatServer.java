@@ -2,7 +2,6 @@ package ru.geekbrains.server;
 
 import ru.geekbrains.client.AuthException;
 import ru.geekbrains.client.ChangeLoginException;
-import ru.geekbrains.client.RegistrationException;
 import ru.geekbrains.client.TextMessage;
 import ru.geekbrains.server.auth.AuthService;
 import ru.geekbrains.server.auth.AuthServiceJdbcImpl;
@@ -16,25 +15,30 @@ import java.net.Socket;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import static ru.geekbrains.client.MessagePatterns.*;
 
 public class ChatServer {
 
-    private AuthService authService;
-
-    private Map<String, ClientHandler> clientHandlerMap = Collections.synchronizedMap(new HashMap<>());
     private static UserRepository userRepository;
-
+    private AuthService authService;
+    private Map<String, ClientHandler> clientHandlerMap = Collections.synchronizedMap(new HashMap<>());
     private String serviceMessage;
     private String serviceMessageType;
+
+    public ChatServer(AuthService authService) {
+        this.authService = authService;
+    }
 
     public static void main(String[] args) {
         AuthService authService;
         try {
-            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/network_chat",
-                    "root", "password");
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/network_chat?characterEncoding=utf8",
+                    "root", "tuborg1989");
             userRepository = new UserRepository(conn);
             authService = new AuthServiceJdbcImpl(userRepository);
         } catch (SQLException e) {
@@ -51,14 +55,10 @@ public class ChatServer {
         }
     }
 
-    public ChatServer(AuthService authService) {
-        this.authService = authService;
-    }
-
     private void start(int port) throws IOException {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.printf("Server started at %s%n", serverSocket.getInetAddress());
-            while (!serverSocket.isClosed()) {
+            while (true) {
                 Socket socket = serverSocket.accept();
                 DataInputStream inp = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
@@ -141,8 +141,9 @@ public class ChatServer {
         if (authParts.length != 3 || !authParts[0].equals("/auth")) {
             System.out.printf("Incorrect authorization message %s%n", authMessage);
             throw new AuthException();
-        }
-        return new User(-1, authParts[1], authParts[2]);
+        } else if (!clientHandlerMap.containsKey(authParts[1])) {
+            return new User(-1, authParts[1], authParts[2]);
+        } else throw new AuthException();
     }
 
     private void sendUserConnectedMessage(String login) throws IOException {
@@ -162,6 +163,7 @@ public class ChatServer {
             }
         }
     }
+
 
     public void sendMessage(TextMessage msg) throws IOException {
         ClientHandler userToClientHandler = clientHandlerMap.get(msg.getUserTo());
@@ -193,17 +195,30 @@ public class ChatServer {
 
     public void changeLogin(String text) throws ChangeLoginException {
         String[] textParts = text.split(" ");
+        String oldLogin = textParts[2];
+        String newLogin = textParts[3];
+
         System.out.println("Try to change login");
         try {
-            userRepository.updateUserLogin(textParts[2], textParts[3]);
-            ClientHandler clientHandler = clientHandlerMap.get(textParts[2]);
-            clientHandler.sendUserUpdateLoginMessage(textParts[2], textParts[3]);
-            //clientHandlerMap.get(textParts[1]).sendUserUpdateLoginMessage(textParts[1], textParts[2]);
+            userRepository.updateUserLogin(oldLogin, newLogin);
+            System.out.printf("Login %s changed to %s%n", oldLogin, newLogin);
 
-//        } catch (IOException e) {
-//            System.err.println("Error during sending login update");
-//            e.printStackTrace();
-        } catch (SQLException | IOException e){
+            ClientHandler currentUserHandler = clientHandlerMap.remove(oldLogin);
+            clientHandlerMap.put(newLogin, currentUserHandler);
+            clientHandlerMap.get(newLogin).setLogin(newLogin);
+
+            System.out.printf("Login %s changed to %s in clientHandlerMap%n", oldLogin, clientHandlerMap.get(newLogin).getLogin());
+
+            ClientHandler clientHandler = clientHandlerMap.get(newLogin);
+            clientHandler.sendChangeLoginState();
+
+            for (ClientHandler c :
+                    clientHandlerMap.values()) {
+                c.sendUserList(getUserList());
+            }
+
+
+        } catch (SQLException | IOException e) {
             System.err.println("Error during updating login in DB");
             e.printStackTrace();
             throw new ChangeLoginException("Error during updating login in DB");

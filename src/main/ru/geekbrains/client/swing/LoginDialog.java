@@ -2,6 +2,7 @@ package ru.geekbrains.client.swing;
 
 import ru.geekbrains.client.AuthException;
 import ru.geekbrains.client.Network;
+
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
@@ -70,6 +71,7 @@ public class LoginDialog extends JDialog {
                     network.authorize(tfUsername.getText(), String.valueOf(pfPassword.getPassword()));
                     connected = true;
                 } catch (IOException ex) {
+                    ex.printStackTrace();
                     JOptionPane.showMessageDialog(LoginDialog.this,
                             "Ошибка сети",
                             "Авторизация",

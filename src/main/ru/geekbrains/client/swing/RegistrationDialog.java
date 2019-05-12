@@ -2,16 +2,13 @@ package ru.geekbrains.client.swing;
 
 import ru.geekbrains.client.Network;
 import ru.geekbrains.client.RegistrationException;
-import ru.geekbrains.server.persistance.UserRepository;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
 import java.io.IOException;
-import java.sql.SQLException;
 
 public class RegistrationDialog extends JDialog {
 
@@ -23,9 +20,7 @@ public class RegistrationDialog extends JDialog {
     private JButton btnSend;
     private JButton btnCancel;
 
-    private boolean registered;
-
-    public RegistrationDialog (Frame parent, Network network){
+    public RegistrationDialog(Frame parent, Network network) {
 
         super(parent, "Регистрация", true);
 
@@ -59,8 +54,6 @@ public class RegistrationDialog extends JDialog {
         panel.add(pf1Password, cs);
         panel.setBorder(new LineBorder(Color.GRAY));
 
-
-
         lbPassword = new JLabel("Повторите пароль: ");
         cs.gridx = 0;
         cs.gridy = 2;
@@ -80,6 +73,7 @@ public class RegistrationDialog extends JDialog {
         btnCancel.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+
                 dispose();
             }
         });
@@ -135,10 +129,5 @@ public class RegistrationDialog extends JDialog {
         setResizable(false);
         setLocationRelativeTo(parent);
         setVisible(true);
-    }
-
-    public boolean isRegistered() {
-
-        return registered;
     }
 }

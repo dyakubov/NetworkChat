@@ -1,17 +1,16 @@
 package ru.geekbrains.client.swing;
 
-import ru.geekbrains.client.ChangeLoginException;
 import ru.geekbrains.client.Network;
-import ru.geekbrains.client.RegistrationException;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 
 public class ChangeLoginForm extends JDialog {
 
+    Thread changeLoginThread;
+    Network network;
     private JTextField tfUsername;
     private JLabel lbUsername;
     private JButton btnSend;
@@ -20,7 +19,7 @@ public class ChangeLoginForm extends JDialog {
     public ChangeLoginForm(Frame parent, Network network) {
 
         super(parent, "Смена логина", true);
-
+        this.network = network;
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints cs = new GridBagConstraints();
 
@@ -55,19 +54,7 @@ public class ChangeLoginForm extends JDialog {
                 String login = tfUsername.getText();
 
                 if (!login.isEmpty()) {
-                    try {
-                        network.changeLogin(login);
-                        JOptionPane.showMessageDialog(ChangeLoginForm.this,
-                                "Логин успешно изменен",
-                                "Информационное сообщение",
-                                JOptionPane.INFORMATION_MESSAGE);
-                        dispose();
-                    } catch (IOException | ChangeLoginException ex) {
-                        JOptionPane.showMessageDialog(ChangeLoginForm.this,
-                                ex.getMessage(),
-                                "Ошибка",
-                                JOptionPane.ERROR_MESSAGE);
-                    }
+                    formSendChangeLoginRequest(network);
 
                 } else {
                     JOptionPane.showMessageDialog(ChangeLoginForm.this,
@@ -90,6 +77,48 @@ public class ChangeLoginForm extends JDialog {
         setResizable(false);
         setLocationRelativeTo(parent);
         setVisible(true);
+    }
+
+    private void formSendChangeLoginRequest(Network network) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                changeLoginThread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String newLogin = tfUsername.getText();
+                            network.sendChangeLoginRequest(newLogin);
+                            Thread.sleep(300);
+
+
+                            if (network.loginChanged) {
+                                network.setLogin(newLogin);
+                                network.loginChanged = false;
+                                System.out.println("Смена логина произведена");
+
+                                JOptionPane.showMessageDialog(ChangeLoginForm.this,
+                                        "Логин успешно изменен",
+                                        "Информационное сообщение",
+                                        JOptionPane.INFORMATION_MESSAGE);
+
+
+                            } else {
+                                JOptionPane.showMessageDialog(ChangeLoginForm.this,
+                                        "Логин не изменен",
+                                        "Ошибка",
+                                        JOptionPane.ERROR_MESSAGE);
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
+                changeLoginThread.start();
+            }
+        });
+
     }
 }
 

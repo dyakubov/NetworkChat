@@ -1,10 +1,8 @@
 package ru.geekbrains.client;
 
-import java.io.Closeable;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Set;
 
 import static ru.geekbrains.client.MessagePatterns.*;
@@ -14,6 +12,15 @@ public class Network implements Closeable {
     public Socket socket;
     public DataInputStream in;
     public DataOutputStream out;
+
+
+    private ArrayList<TextMessage> restoredHistory;
+
+    public boolean loginChanged;
+
+    private final String historyPath = "/Users/yakubov-dd/Documents/NetworkChat/ChatHistory";
+    private String historyFileName;
+    private File historyFile;
 
     private String hostName;
     private int port;
@@ -28,10 +35,18 @@ public class Network implements Closeable {
         this.port = port;
         this.messageReciever = messageReciever;
 
+
+
         this.receiverThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    restoreHistory(historyFile);
+                } catch (IOException | ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+                while (true) {
                     try {
                         String text = in.readUTF();
 
@@ -54,13 +69,11 @@ public class Network implements Closeable {
                             continue;
                         }
 
-                        String[] logins = parseUserLoginChanged(text);
-                        if (logins != null){
-                            messageReciever.changedLogin(logins[0], logins[1]);
-                            continue;
+
+                        boolean newLogin = parseLoginChangeSuccess(text);
+                        if (newLogin) {
+                            loginChanged = true;
                         }
-
-
 
                         Set<String> users = parseUserList(text);
                         if (users != null) {
@@ -81,27 +94,35 @@ public class Network implements Closeable {
         socket = new Socket(hostName, port);
         out = new DataOutputStream(socket.getOutputStream());
         in = new DataInputStream(socket.getInputStream());
+        historyFileName = String.format("history_%s.hys", login);
 
 
         sendMessage(String.format(AUTH_PATTERN, login, password));
         String response = in.readUTF();
         if (response.equals(AUTH_SUCCESS_RESPONSE)) {
             this.login = login;
+
+
+            historyFile = new File(historyPath, historyFileName);
+            if (!historyFile.exists()){
+                createHistoryFile();
+            }
+
             receiverThread.start();
         } else {
             throw new AuthException();
         }
     }
 
-
-    public void registration (String login, String password) throws IOException, RegistrationException {
+    public void registration(String login, String password) throws IOException, RegistrationException {
         socket = new Socket(hostName, port);
         out = new DataOutputStream(socket.getOutputStream());
         in = new DataInputStream(socket.getInputStream());
 
         sendMessage(String.format(REG_PATTERN, login, password));
+
         String response = in.readUTF();
-        if (response.startsWith(REG_FAIL_RESPONSE)){
+        if (response.startsWith(REG_FAIL_RESPONSE)) {
             throw new RegistrationException("Неуспешная регистрация");
         } else {
 
@@ -122,13 +143,18 @@ public class Network implements Closeable {
     }
 
     public void requestConnectedUserList() {
+
         sendMessage(USER_LIST_TAG);
     }
 
     public String getLogin() {
+
         return login;
     }
 
+    public void setLogin(String login) {
+        this.login = login;
+    }
 
     @Override
     public void close() {
@@ -137,13 +163,36 @@ public class Network implements Closeable {
     }
 
     //вставить на форму смены логина
-    public void changeLogin(String newLogin) throws IOException, ChangeLoginException {
+    public void sendChangeLoginRequest(String newLogin) {
         sendMessage(String.format(CHANGE_LOGIN_PATTERN, login, newLogin));
-        String response = in.readUTF();
-        System.out.println("Ответ сервера " + response );
-        if (response.equals(CHANGE_LOGIN_SUCCESS_RESPONSE)){
-            this.login = newLogin;
+        System.out.println("Отправлено сообщение о смене логина");
 
-        } else throw new ChangeLoginException("Смена логина не удалась");
+    }
+
+    public void createHistoryFile() throws IOException {
+        this.historyFileName = String.format("history_%s.hys", this.login);
+        File file = new File(historyPath, historyFileName);
+        boolean created = file.createNewFile();
+        if (created){
+            System.out.printf("Файл истории создан: :%s", file.getAbsolutePath());
+        } else System.out.println("Файл истории не создан");
+    }
+
+    public void saveHistory() throws IOException {
+        try(ObjectOutputStream historyOutStream = new ObjectOutputStream(new FileOutputStream(historyFile))){
+            restoredHistory.addAll(currentHistoryList);
+            historyOutStream.writeObject(restoredHistory);
+        }
+    }
+
+    private void restoreHistory(File file) throws IOException, ClassNotFoundException {
+        try(ObjectInputStream historyInputStream = new ObjectInputStream(new FileInputStream(file))) {
+            
+            restoredHistory = (ArrayList<TextMessage>) historyInputStream.readObject();
+
+            for (TextMessage textMessage : restoredHistory){
+                messageReciever.submitMessage(textMessage);
+            }
+        }
     }
 }

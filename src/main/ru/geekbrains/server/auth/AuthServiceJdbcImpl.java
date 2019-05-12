@@ -14,14 +14,19 @@ public class AuthServiceJdbcImpl implements AuthService {
     }
 
     @Override
-    public boolean authUser(User user) {
-        User tmp = null;
-        try {
-            tmp = userRepository.findByLogin(user.getLogin());
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-        return tmp.getPassword() != null && tmp.getPassword().equals(user.getPassword());
+    public boolean authUser(User user) throws SQLException {
+        return userRepository.authorized(user.getLogin(), user.getPassword());
     }
+
+
+//    public boolean authUser(User user) {
+//        User tmp = null;
+//        try {
+//            tmp = userRepository.findByLogin(user.getLogin());
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//            return false;
+//        }
+//        return tmp.getPassword() != null && tmp.getPassword().equals(user.getPassword());
+//    }
 }

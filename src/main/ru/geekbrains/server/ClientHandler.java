@@ -13,11 +13,11 @@ import static ru.geekbrains.client.MessagePatterns.*;
 
 public class ClientHandler {
 
-    private final String login;
     private final Socket socket;
     private final DataInputStream inp;
     private final DataOutputStream out;
     private final Thread handleThread;
+    private String login;
     private ChatServer chatServer;
 
     public ClientHandler(String login, Socket socket, ChatServer chatServer) throws IOException {
@@ -47,7 +47,7 @@ public class ClientHandler {
                         } else if (text.equals(USER_LIST_TAG)) {
                             System.out.printf("Sending user list to %s%n", login);
                             sendUserList(chatServer.getUserList());
-                        } else if (text.startsWith(CHANGE_TAG)){
+                        } else if (text.startsWith(CHANGE_TAG)) {
                             System.out.printf("Change login request from %s: %s", login, text);
                             try {
                                 chatServer.changeLogin(text);
@@ -56,7 +56,7 @@ public class ClientHandler {
                                 e.printStackTrace();
                             }
 
-                        } else{
+                        } else {
                             System.out.println("Unknown message: " + text);
                         }
                     } catch (IOException e) {
@@ -73,6 +73,10 @@ public class ClientHandler {
 
     public String getLogin() {
         return login;
+    }
+
+    public void setLogin(String login) {
+        this.login = login;
     }
 
     public void sendMessage(String userFrom, String msg) throws IOException {
@@ -100,9 +104,12 @@ public class ClientHandler {
         }
     }
 
-    public void sendUserUpdateLoginMessage (String login, String newLogin) throws IOException{
-        if (socket.isConnected()){
-            out.writeUTF(String.format(CHANGED_LOGIN_SEND, login, newLogin));
+
+    public void sendChangeLoginState() throws IOException {
+        if (socket.isConnected()) {
+            out.writeUTF(CHANGE_LOGIN_SUCCESS_RESPONSE);
+            out.flush();
+            System.out.println("Сообщение об успешной смене логина отправлено");
         }
     }
 }
