@@ -2,6 +2,7 @@ package ru.geekbrains.client.swing;
 
 import ru.geekbrains.client.AuthException;
 import ru.geekbrains.client.Network;
+
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
@@ -18,6 +19,7 @@ public class LoginDialog extends JDialog {
     private JLabel lbPassword;
     private JButton btnLogin;
     private JButton btnCancel;
+    private JButton btnReg;
 
     private boolean connected;
 
@@ -57,6 +59,7 @@ public class LoginDialog extends JDialog {
 
         btnLogin = new JButton("Войти");
         btnCancel = new JButton("Отмена");
+        btnReg = new JButton("Регистрация");
 
         JPanel bp = new JPanel();
         bp.add(btnLogin);
@@ -68,6 +71,7 @@ public class LoginDialog extends JDialog {
                     network.authorize(tfUsername.getText(), String.valueOf(pfPassword.getPassword()));
                     connected = true;
                 } catch (IOException ex) {
+                    ex.printStackTrace();
                     JOptionPane.showMessageDialog(LoginDialog.this,
                             "Ошибка сети",
                             "Авторизация",
@@ -90,6 +94,14 @@ public class LoginDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 connected = false;
                 dispose();
+            }
+        });
+
+        bp.add(btnReg);
+        btnReg.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                RegistrationDialog regDialog = new RegistrationDialog(parent, network);
             }
         });
 

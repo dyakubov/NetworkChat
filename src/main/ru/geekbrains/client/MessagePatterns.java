@@ -1,6 +1,8 @@
 package ru.geekbrains.client;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,6 +13,16 @@ public final class MessagePatterns {
     public static final String AUTH_PATTERN = AUTH_TAG + " %s %s";
     public static final String AUTH_SUCCESS_RESPONSE = AUTH_TAG + " successful";
     public static final String AUTH_FAIL_RESPONSE = AUTH_TAG + " fail";
+
+    public static final String REG_TAG = "/reg";
+    public static final String REG_PATTERN = REG_TAG + " %s %s";
+    public static final String REG_SUCCESS_RESPONSE = REG_TAG + " successful";
+    public static final String REG_FAIL_RESPONSE = REG_TAG + " fail";
+
+    public static final String CHANGE_TAG = "/change";
+    public static final String CHANGE_LOGIN_PATTERN = CHANGE_TAG + " login %s %s";
+    public static final String CHANGE_LOGIN_SUCCESS_RESPONSE = CHANGE_TAG + " login successful";
+    public static final String CHANGE_LOGIN_FAIL_RESPONSE = CHANGE_TAG + " login fail";
 
     public static final String DISCONNECT = "/disconnect";
     public static final String DISCONNECT_SEND = DISCONNECT + " %s";
@@ -26,11 +38,16 @@ public final class MessagePatterns {
 
     public static final Pattern MESSAGE_REC_PATTERN = Pattern.compile("^/w (\\w+) (.+)", Pattern.MULTILINE);
 
+    public static List<TextMessage> currentHistoryList = new ArrayList<>();
+
     public static TextMessage parseTextMessageRegx(String text, String userTo) {
         Matcher matcher = MESSAGE_REC_PATTERN.matcher(text);
+
         if (matcher.matches()) {
-            return new TextMessage(matcher.group(1), userTo,
+            TextMessage textMessage = new TextMessage(matcher.group(1), userTo,
                     matcher.group(2));
+            currentHistoryList.add(textMessage);
+            return textMessage;
         } else {
             System.out.println("Not a text message pattern: " + text);
             return null;
@@ -71,7 +88,7 @@ public final class MessagePatterns {
         String[] parts = text.split(" ");
         if (parts.length >= 1 && parts[0].equals(USER_LIST_TAG)) {
             Set<String> users = new HashSet<>();
-            for (int i=1; i<parts.length; i++) {
+            for (int i = 1; i < parts.length; i++) {
                 users.add(parts[i]);
             }
             return users;
@@ -79,5 +96,10 @@ public final class MessagePatterns {
             System.out.println("Not a user list pattern: " + text);
             return null;
         }
+    }
+
+
+    public static boolean parseLoginChangeSuccess(String text) {
+        return text.equals(CHANGE_LOGIN_SUCCESS_RESPONSE);
     }
 }

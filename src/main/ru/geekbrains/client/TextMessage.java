@@ -1,8 +1,9 @@
 package ru.geekbrains.client;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class TextMessage {
+public class TextMessage implements Serializable {
 
     private LocalDateTime created;
 

@@ -11,4 +11,5 @@ public interface MessageReciever {
     void userDisconnected(String login);
 
     void updateUserList(Set<String> users);
+
 }

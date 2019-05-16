@@ -1,5 +1,6 @@
 package ru.geekbrains.server;
 
+import ru.geekbrains.client.ChangeLoginException;
 import ru.geekbrains.client.TextMessage;
 
 import java.io.DataInputStream;
@@ -12,11 +13,11 @@ import static ru.geekbrains.client.MessagePatterns.*;
 
 public class ClientHandler {
 
-    private final String login;
     private final Socket socket;
     private final DataInputStream inp;
     private final DataOutputStream out;
     private final Thread handleThread;
+    private String login;
     private ChatServer chatServer;
 
     public ClientHandler(String login, Socket socket, ChatServer chatServer) throws IOException {
@@ -46,6 +47,17 @@ public class ClientHandler {
                         } else if (text.equals(USER_LIST_TAG)) {
                             System.out.printf("Sending user list to %s%n", login);
                             sendUserList(chatServer.getUserList());
+                        } else if (text.startsWith(CHANGE_TAG)) {
+                            System.out.printf("Change login request from %s: %s", login, text);
+                            try {
+                                chatServer.changeLogin(text);
+
+                            } catch (ChangeLoginException e) {
+                                e.printStackTrace();
+                            }
+
+                        } else {
+                            System.out.println("Unknown message: " + text);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -63,6 +75,10 @@ public class ClientHandler {
         return login;
     }
 
+    public void setLogin(String login) {
+        this.login = login;
+    }
+
     public void sendMessage(String userFrom, String msg) throws IOException {
         if (socket.isConnected()) {
             out.writeUTF(String.format(MESSAGE_SEND_PATTERN, userFrom, msg));
@@ -72,6 +88,7 @@ public class ClientHandler {
     public void sendConnectedMessage(String login) throws IOException {
         if (socket.isConnected()) {
             out.writeUTF(String.format(CONNECTED_SEND, login));
+
         }
     }
 
@@ -84,6 +101,15 @@ public class ClientHandler {
     public void sendUserList(Set<String> users) throws IOException {
         if (socket.isConnected()) {
             out.writeUTF(String.format(USER_LIST_RESPONSE, String.join(" ", users)));
+        }
+    }
+
+
+    public void sendChangeLoginState() throws IOException {
+        if (socket.isConnected()) {
+            out.writeUTF(CHANGE_LOGIN_SUCCESS_RESPONSE);
+            out.flush();
+            System.out.println("Сообщение об успешной смене логина отправлено");
         }
     }
 }
