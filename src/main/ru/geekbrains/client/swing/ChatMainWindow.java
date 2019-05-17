@@ -26,9 +26,6 @@ public class ChatMainWindow extends JFrame implements MessageReciever {
     private final DefaultListModel<String> userListModel;
     private final Network network;
     private final JMenuBar menu;
-    private HistoryHandler historyHandler;
-
-
 
 
     public ChatMainWindow() {
@@ -75,11 +72,8 @@ public class ChatMainWindow extends JFrame implements MessageReciever {
                     messageField.setText(null);
                     network.sendTextMessage(msg);
                     MessagePatterns.currentHistoryList.add(msg);
-                    try {
-                        HistoryHandler.saveHistory();
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
+
+
                 }
             }
         });
@@ -108,11 +102,17 @@ public class ChatMainWindow extends JFrame implements MessageReciever {
 
         this.network.requestConnectedUserList();
 
+
+
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
                 if (network != null) {
-
+                    try {
+                        network.saveHistory();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
                     network.close();
                 }
 

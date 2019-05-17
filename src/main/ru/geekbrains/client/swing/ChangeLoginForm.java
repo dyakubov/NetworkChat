@@ -1,12 +1,9 @@
 package ru.geekbrains.client.swing;
 
-import ru.geekbrains.client.HistoryHandler;
 import ru.geekbrains.client.Network;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 public class ChangeLoginForm extends JDialog {
 
@@ -16,7 +13,6 @@ public class ChangeLoginForm extends JDialog {
     private JLabel lbUsername;
     private JButton btnSend;
     private JButton btnCancel;
-    private HistoryHandler historyHandler;
 
     public ChangeLoginForm(Frame parent, Network network) {
 
@@ -87,7 +83,7 @@ public class ChangeLoginForm extends JDialog {
                         if (network.loginChanged) {
                             network.setLogin(newLogin);
                             network.loginChanged = false;
-                            historyHandler.renameHistoryFile();
+                            network.renameHistoryFile();
                             System.out.println("Смена логина произведена");
 
                             JOptionPane.showMessageDialog(ChangeLoginForm.this,

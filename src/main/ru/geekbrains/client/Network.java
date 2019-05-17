@@ -9,18 +9,20 @@ import static ru.geekbrains.client.MessagePatterns.*;
 
 public class Network implements Closeable {
 
-
+    private final String historyPath = "/Users/yakubovdd/IdeaProjects/NetworkChat/src/ChatHistory";
     public Socket socket;
     public DataInputStream in;
     public DataOutputStream out;
     public boolean loginChanged;
+    private ArrayList<TextMessage> restoredHistory; //Коллекция с восстановленной историей сообщений
+    private String historyFileName; // Имя файла с историей для конкретного пользователя
+    private File historyFile;
 
-
+    public static final int LAST_MESSAGES_COUNT = 5;
 
     private String hostName;
     private int port;
     private MessageReciever messageReciever;
-    private HistoryHandler historyHandler;
 
     private String login;
 
@@ -30,12 +32,15 @@ public class Network implements Closeable {
         this.hostName = hostName;
         this.port = port;
         this.messageReciever = messageReciever;
-        this.historyHandler = new HistoryHandler(this, messageReciever);
 
 
         this.receiverThread = new Thread(() -> {
-
-            historyHandler.restoreHistory();//Восстанавливаем историю
+            try {
+                restoreHistory();
+            } catch (IOException | ClassNotFoundException e) {
+                restoredHistory = new ArrayList<>();
+                e.printStackTrace();
+            }
 
             while (true) {
                 try {
@@ -84,13 +89,21 @@ public class Network implements Closeable {
         socket = new Socket(hostName, port);
         out = new DataOutputStream(socket.getOutputStream());
         in = new DataInputStream(socket.getInputStream());
+        historyFileName = String.format("history_%s.hys", login);
+
 
         sendMessage(String.format(AUTH_PATTERN, login, password));
         String response = in.readUTF();
         if (response.equals(AUTH_SUCCESS_RESPONSE)) {
             this.login = login;
+
+
+            historyFile = new File(historyPath, historyFileName);
+            if (!historyFile.exists()) {
+                createHistoryFile();
+            }
+
             receiverThread.start();
-            historyHandler.restoreHistory();
         } else {
             throw new AuthException();
         }
@@ -111,7 +124,6 @@ public class Network implements Closeable {
 
     public void sendTextMessage(TextMessage message) {
         sendMessage(String.format(MESSAGE_SEND_PATTERN, message.getUserTo(), message.getText()));
-
     }
 
     private void sendMessage(String msg) {
@@ -149,6 +161,58 @@ public class Network implements Closeable {
 
     }
 
+    // Метод создания пустого файла для хранении истории сообщений
+    public void createHistoryFile() throws IOException {
+        historyFileName = String.format("history_%s.hys", login);
+        File file = new File(historyPath, historyFileName);
+        boolean created = file.createNewFile();
+        if (created) {
+            System.out.printf("Файл истории создан: :%s", file.getAbsolutePath());
+        } else System.out.println("Файл истории не создан");
+    }
 
+    // Метод сериализации коллекции, содержащей историю сообщений
+    public void saveHistory() throws IOException {
+        try (ObjectOutputStream historyOutStream = new ObjectOutputStream(new FileOutputStream(historyFile))) {
+            if (restoredHistory != null) {
+                restoredHistory.addAll(currentHistoryList);
+                historyOutStream.writeObject(restoredHistory);
+            } else System.out.println("История не сохранена");
+
+        }
+    }
+
+    //Метод переименования истории при смене логина
+    public void renameHistoryFile() {
+        String newHistoryFileName = String.format("history_%s.hys", this.login);
+        System.out.println("newHistoryFileName: " + newHistoryFileName);
+        if (historyFile.renameTo(new File(historyPath, newHistoryFileName))) {
+            historyFile = new File(historyPath, newHistoryFileName);
+            historyFileName = newHistoryFileName;
+
+            System.out.println("Файл истории переименован на: " + historyFile);
+        } else System.out.println("Файл истории не переименован: " + historyFile);
+    }
+
+    // Метод десериализации файла с локальной историей сообщений
+    private void restoreHistory() throws IOException, ClassNotFoundException {
+        try (ObjectInputStream historyInputStream = new ObjectInputStream(new FileInputStream(historyFile))) {
+            restoredHistory = (ArrayList<TextMessage>) historyInputStream.readObject();
+
+            int lastMessagesIndex = restoredHistory.size() - LAST_MESSAGES_COUNT;
+            if (lastMessagesIndex > restoredHistory.size()){
+                lastMessagesIndex = 0;
+            }
+
+            for (int i = lastMessagesIndex; i < restoredHistory.size(); i++) {
+                messageReciever.submitMessage(restoredHistory.get(i));
+            }
+
+            //Восстанавливаем историю в окне сообщений
+//            for (TextMessage textMessage : restoredHistory) {
+////                messageReciever.submitMessage(textMessage);
+////            }
+        }
+    }
 
 }
