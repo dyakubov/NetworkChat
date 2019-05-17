@@ -1,5 +1,6 @@
 package ru.geekbrains.client;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -47,6 +48,11 @@ public final class MessagePatterns {
             TextMessage textMessage = new TextMessage(matcher.group(1), userTo,
                     matcher.group(2));
             currentHistoryList.add(textMessage);
+            try {
+                HistoryHandler.saveHistory();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             return textMessage;
         } else {
             System.out.println("Not a text message pattern: " + text);
