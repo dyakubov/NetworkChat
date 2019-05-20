@@ -38,7 +38,7 @@ public class ChatServer {
         AuthService authService;
         try {
             Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/network_chat?characterEncoding=utf8",
-                    "root", "tuborg1989");
+                    "root", "password");
             userRepository = new UserRepository(conn);
             authService = new AuthServiceJdbcImpl(userRepository);
         } catch (SQLException e) {

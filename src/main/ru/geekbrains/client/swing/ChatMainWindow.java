@@ -1,9 +1,6 @@
 package ru.geekbrains.client.swing;
 
-import ru.geekbrains.client.MessagePatterns;
-import ru.geekbrains.client.MessageReciever;
-import ru.geekbrains.client.Network;
-import ru.geekbrains.client.TextMessage;
+import ru.geekbrains.client.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -29,8 +26,6 @@ public class ChatMainWindow extends JFrame implements MessageReciever {
     private final DefaultListModel<String> userListModel;
     private final Network network;
     private final JMenuBar menu;
-
-
 
 
     public ChatMainWindow() {
@@ -77,6 +72,8 @@ public class ChatMainWindow extends JFrame implements MessageReciever {
                     messageField.setText(null);
                     network.sendTextMessage(msg);
                     MessagePatterns.currentHistoryList.add(msg);
+
+
                 }
             }
         });
@@ -105,6 +102,8 @@ public class ChatMainWindow extends JFrame implements MessageReciever {
 
         this.network.requestConnectedUserList();
 
+
+
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -113,9 +112,6 @@ public class ChatMainWindow extends JFrame implements MessageReciever {
                         network.saveHistory();
                     } catch (IOException e1) {
                         e1.printStackTrace();
-                        JOptionPane.showMessageDialog(ChatMainWindow.this,
-                                "Ошибка",
-                                "Не удалось сохранить историю", JOptionPane.ERROR_MESSAGE);
                     }
                     network.close();
                 }

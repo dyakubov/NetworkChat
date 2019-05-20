@@ -9,7 +9,7 @@ import static ru.geekbrains.client.MessagePatterns.*;
 
 public class Network implements Closeable {
 
-    private final String historyPath = "/Users/yakubov-dd/Documents/NetworkChat/ChatHistory";
+    private final String historyPath = "/Users/yakubovdd/IdeaProjects/NetworkChat/src/ChatHistory";
     public Socket socket;
     public DataInputStream in;
     public DataOutputStream out;
@@ -17,6 +17,8 @@ public class Network implements Closeable {
     private ArrayList<TextMessage> restoredHistory; //Коллекция с восстановленной историей сообщений
     private String historyFileName; // Имя файла с историей для конкретного пользователя
     private File historyFile;
+
+    public static final int LAST_MESSAGES_COUNT = 5;
 
     private String hostName;
     private int port;
@@ -197,10 +199,19 @@ public class Network implements Closeable {
         try (ObjectInputStream historyInputStream = new ObjectInputStream(new FileInputStream(historyFile))) {
             restoredHistory = (ArrayList<TextMessage>) historyInputStream.readObject();
 
-            //Восстанавливаем историю в окне сообщений
-            for (TextMessage textMessage : restoredHistory) {
-                messageReciever.submitMessage(textMessage);
+            int lastMessagesIndex = restoredHistory.size() - LAST_MESSAGES_COUNT;
+            if (lastMessagesIndex > restoredHistory.size()){
+                lastMessagesIndex = 0;
             }
+
+            for (int i = lastMessagesIndex; i < restoredHistory.size(); i++) {
+                messageReciever.submitMessage(restoredHistory.get(i));
+            }
+
+            //Восстанавливаем историю в окне сообщений
+//            for (TextMessage textMessage : restoredHistory) {
+////                messageReciever.submitMessage(textMessage);
+////            }
         }
     }
 
