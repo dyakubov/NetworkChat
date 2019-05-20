@@ -19,6 +19,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static ru.geekbrains.client.MessagePatterns.*;
 
@@ -29,6 +31,7 @@ public class ChatServer {
     private Map<String, ClientHandler> clientHandlerMap = Collections.synchronizedMap(new HashMap<>());
     private String serviceMessage;
     private String serviceMessageType;
+    private static ExecutorService executorService;
 
     public ChatServer(AuthService authService) {
         this.authService = authService;
@@ -41,6 +44,7 @@ public class ChatServer {
                     "root", "password");
             userRepository = new UserRepository(conn);
             authService = new AuthServiceJdbcImpl(userRepository);
+            executorService = Executors.newFixedThreadPool(50);
         } catch (SQLException e) {
             e.printStackTrace();
             return;
@@ -180,6 +184,7 @@ public class ChatServer {
 
     public void subscribe(String login, Socket socket) throws IOException {
         clientHandlerMap.put(login, new ClientHandler(login, socket, this));
+        executorService.execute(clientHandlerMap.get(login));
         sendUserConnectedMessage(login);
     }
 

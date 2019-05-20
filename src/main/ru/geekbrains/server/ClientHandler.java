@@ -11,12 +11,11 @@ import java.util.Set;
 
 import static ru.geekbrains.client.MessagePatterns.*;
 
-public class ClientHandler {
+public class ClientHandler implements Runnable{
 
     private final Socket socket;
     private final DataInputStream inp;
     private final DataOutputStream out;
-    private final Thread handleThread;
     private String login;
     private ChatServer chatServer;
 
@@ -26,50 +25,8 @@ public class ClientHandler {
         this.inp = new DataInputStream(socket.getInputStream());
         this.out = new DataOutputStream(socket.getOutputStream());
         this.chatServer = chatServer;
-
-        this.handleThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!Thread.currentThread().isInterrupted()) {
-                    try {
-                        String text = inp.readUTF();
-                        System.out.printf("Message from user %s: %s%n", login, text);
-
-                        System.out.println("New message " + text);
-                        TextMessage msg = parseTextMessageRegx(text, login);
-                        if (msg != null) {
-                            msg.swapUsers();
-                            chatServer.sendMessage(msg);
-                        } else if (text.equals(DISCONNECT)) {
-                            System.out.printf("User %s is disconnected%n", login);
-                            chatServer.unsubscribe(login);
-                            return;
-                        } else if (text.equals(USER_LIST_TAG)) {
-                            System.out.printf("Sending user list to %s%n", login);
-                            sendUserList(chatServer.getUserList());
-                        } else if (text.startsWith(CHANGE_TAG)) {
-                            System.out.printf("Change login request from %s: %s", login, text);
-                            try {
-                                chatServer.changeLogin(text);
-
-                            } catch (ChangeLoginException e) {
-                                e.printStackTrace();
-                            }
-
-                        } else {
-                            System.out.println("Unknown message: " + text);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        chatServer.unsubscribe(login);
-                        break;
-                    }
-                }
-            }
-        });
-        this.chatServer = chatServer;
-        this.handleThread.start();
     }
+
 
     public String getLogin() {
         return login;
@@ -110,6 +67,45 @@ public class ClientHandler {
             out.writeUTF(CHANGE_LOGIN_SUCCESS_RESPONSE);
             out.flush();
             System.out.println("Сообщение об успешной смене логина отправлено");
+        }
+    }
+
+    @Override
+    public void run() {
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                String text = inp.readUTF();
+                System.out.printf("Message from user %s: %s%n", login, text);
+
+                System.out.println("New message " + text);
+                TextMessage msg = parseTextMessageRegx(text, login);
+                if (msg != null) {
+                    msg.swapUsers();
+                    chatServer.sendMessage(msg);
+                } else if (text.equals(DISCONNECT)) {
+                    System.out.printf("User %s is disconnected%n", login);
+                    chatServer.unsubscribe(login);
+                    return;
+                } else if (text.equals(USER_LIST_TAG)) {
+                    System.out.printf("Sending user list to %s%n", login);
+                    sendUserList(chatServer.getUserList());
+                } else if (text.startsWith(CHANGE_TAG)) {
+                    System.out.printf("Change login request from %s: %s", login, text);
+                    try {
+                        chatServer.changeLogin(text);
+
+                    } catch (ChangeLoginException e) {
+                        e.printStackTrace();
+                    }
+
+                } else {
+                    System.out.println("Unknown message: " + text);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                chatServer.unsubscribe(login);
+                break;
+            }
         }
     }
 }

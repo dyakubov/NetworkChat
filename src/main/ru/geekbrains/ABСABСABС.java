@@ -10,7 +10,7 @@ public class ABСABСABС {
     }
 
     private synchronized static void printA() {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 5; i++) {
             try {
                 while (currentLetter != 'A') {
                     ABСABСABС.class.wait();
@@ -26,7 +26,7 @@ public class ABСABСABС {
     }
 
     private synchronized static void printB() {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 5; i++) {
             try {
                 while (currentLetter != 'B') {
                     ABСABСABС.class.wait();
@@ -42,7 +42,7 @@ public class ABСABСABС {
     }
 
     private synchronized static void printC() {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 5; i++) {
             try {
                 while (currentLetter != 'С') {
                     ABСABСABС.class.wait();
