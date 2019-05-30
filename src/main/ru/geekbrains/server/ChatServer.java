@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 import static ru.geekbrains.client.MessagePatterns.*;
 
@@ -32,6 +33,7 @@ public class ChatServer {
     private String serviceMessage;
     private String serviceMessageType;
     private static ExecutorService executorService;
+    private static final Logger logger = Logger.getLogger(ChatServer.class.getName());
 
     public ChatServer(AuthService authService) {
         this.authService = authService;
@@ -61,24 +63,24 @@ public class ChatServer {
 
     private void start(int port) throws IOException {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.printf("Server started at %s%n", serverSocket.getInetAddress());
+            logger.info(String.format("Server started at %s%n", serverSocket.getInetAddress()));
             while (true) {
                 Socket socket = serverSocket.accept();
                 DataInputStream inp = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                System.out.println("New client connected!");
+                logger.info("New client connected!");
 
                 User user = null;
 
                 serviceMessage = inp.readUTF();
-                System.out.printf("New service message from %s: %s%n", socket.getInetAddress(), serviceMessage);
+                logger.info(String.format("New service message from %s: %s%n", socket.getInetAddress(), serviceMessage));
                 serviceMessageType = serviceMessage.split(" ")[0];
 
                 switch (serviceMessageType) {
                     case REG_TAG:
                         try {
                             register(serviceMessage, userRepository);
-                            System.out.printf("New registered message %s%n", serviceMessage.split(" ")[1]);
+                            logger.info(String.format("New registered message %s%n", serviceMessage.split(" ")[1]));
                             out.writeUTF(REG_SUCCESS_RESPONSE);
                             out.flush();
 
@@ -101,14 +103,14 @@ public class ChatServer {
 
                         try {
                             if (user != null && authService.authUser(user)) {
-                                System.out.printf("User %s authorized successful!%n", user.getLogin());
+                                logger.info(String.format("User %s authorized successful!%n", user.getLogin()));
                                 subscribe(user.getLogin(), socket);
                                 out.writeUTF(AUTH_SUCCESS_RESPONSE);
                                 out.flush();
 
                             } else {
                                 if (user != null) {
-                                    System.out.printf("Wrong authorization for user %s%n", user.getLogin());
+                                    logger.warning(String.format("Wrong authorization for user %s%n", user.getLogin()));
                                 }
                                 out.writeUTF(AUTH_FAIL_RESPONSE);
                                 out.flush();
@@ -121,7 +123,7 @@ public class ChatServer {
 
 
                     default:
-                        System.out.println("Unknown service message type: " + serviceMessageType);
+                        logger.info("Unknown service message type: " + serviceMessageType);
                         break;
                 }
 
@@ -136,14 +138,14 @@ public class ChatServer {
             User user = new User(-1, regParts[1], regParts[2]);
             userRepository.insert(user);
         } else {
-            System.out.printf("Incorrect registration message %s%n", regMessage);
+            logger.warning(String.format("Incorrect registration message %s%n", regMessage));
         }
     }
 
     private User checkAuthentication(String authMessage) throws AuthException {
         String[] authParts = authMessage.split(" ");
         if (authParts.length != 3 || !authParts[0].equals("/auth")) {
-            System.out.printf("Incorrect authorization message %s%n", authMessage);
+            logger.info(String.format("Incorrect authorization message %s%n", authMessage));
             throw new AuthException();
         } else if (!clientHandlerMap.containsKey(authParts[1])) {
             return new User(-1, authParts[1], authParts[2]);
@@ -153,7 +155,7 @@ public class ChatServer {
     private void sendUserConnectedMessage(String login) throws IOException {
         for (ClientHandler clientHandler : clientHandlerMap.values()) {
             if (!clientHandler.getLogin().equals(login)) {
-                System.out.printf("Sending connect notification to %s about %s%n", clientHandler.getLogin(), login);
+                logger.info(String.format("Sending connect notification to %s about %s%n", clientHandler.getLogin(), login));
                 clientHandler.sendConnectedMessage(login);
             }
         }
@@ -162,7 +164,7 @@ public class ChatServer {
     private void sendUserDisconnectedMessage(String login) throws IOException {
         for (ClientHandler clientHandler : clientHandlerMap.values()) {
             if (!clientHandler.getLogin().equals(login)) {
-                System.out.printf("Sending disconnect notification to %s about %s%n", clientHandler.getLogin(), login);
+                logger.info(String.format("Sending disconnect notification to %s about %s%n", clientHandler.getLogin(), login));
                 clientHandler.sendDisconnectedMessage(login);
             }
         }
@@ -174,7 +176,7 @@ public class ChatServer {
         if (userToClientHandler != null) {
             userToClientHandler.sendMessage(msg.getUserFrom(), msg.getText());
         } else {
-            System.out.printf("User %s not connected%n", msg.getUserTo());
+            logger.warning(String.format("User %s not connected%n", msg.getUserTo()));
         }
     }
 
@@ -183,7 +185,7 @@ public class ChatServer {
     }
 
     public void subscribe(String login, Socket socket) throws IOException {
-        clientHandlerMap.put(login, new ClientHandler(login, socket, this));
+        clientHandlerMap.put(login, new ClientHandler(login, socket, this, logger));
         executorService.execute(clientHandlerMap.get(login));
         sendUserConnectedMessage(login);
     }
@@ -193,7 +195,7 @@ public class ChatServer {
         try {
             sendUserDisconnectedMessage(login);
         } catch (IOException e) {
-            System.err.println("Error sending disconnect message");
+            logger.warning("Error sending disconnect message");
             e.printStackTrace();
         }
     }
@@ -203,16 +205,16 @@ public class ChatServer {
         String oldLogin = textParts[2];
         String newLogin = textParts[3];
 
-        System.out.println("Try to change login");
+        logger.info("Try to change login");
         try {
             userRepository.updateUserLogin(oldLogin, newLogin);
-            System.out.printf("Login %s changed to %s%n", oldLogin, newLogin);
+            logger.info(String.format("Login %s changed to %s%n", oldLogin, newLogin));
 
             ClientHandler currentUserHandler = clientHandlerMap.remove(oldLogin);
             clientHandlerMap.put(newLogin, currentUserHandler);
             clientHandlerMap.get(newLogin).setLogin(newLogin);
 
-            System.out.printf("Login %s changed to %s in clientHandlerMap%n", oldLogin, clientHandlerMap.get(newLogin).getLogin());
+            logger.info(String.format("Login %s changed to %s in clientHandlerMap%n", oldLogin, clientHandlerMap.get(newLogin).getLogin()));
 
             ClientHandler clientHandler = clientHandlerMap.get(newLogin);
             clientHandler.sendChangeLoginState();
@@ -224,7 +226,7 @@ public class ChatServer {
 
 
         } catch (SQLException | IOException e) {
-            System.err.println("Error during updating login in DB");
+            logger.warning("Error during updating login in DB");
             e.printStackTrace();
             throw new ChangeLoginException("Error during updating login in DB");
         }
