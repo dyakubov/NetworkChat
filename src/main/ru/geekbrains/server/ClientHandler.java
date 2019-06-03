@@ -8,6 +8,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import static ru.geekbrains.client.MessagePatterns.*;
 
@@ -18,13 +19,15 @@ public class ClientHandler implements Runnable{
     private final DataOutputStream out;
     private String login;
     private ChatServer chatServer;
+    private Logger logger;
 
-    public ClientHandler(String login, Socket socket, ChatServer chatServer) throws IOException {
+    public ClientHandler(String login, Socket socket, ChatServer chatServer, Logger logger) throws IOException {
         this.login = login;
         this.socket = socket;
         this.inp = new DataInputStream(socket.getInputStream());
         this.out = new DataOutputStream(socket.getOutputStream());
         this.chatServer = chatServer;
+        this.logger = logger;
     }
 
 
@@ -66,7 +69,7 @@ public class ClientHandler implements Runnable{
         if (socket.isConnected()) {
             out.writeUTF(CHANGE_LOGIN_SUCCESS_RESPONSE);
             out.flush();
-            System.out.println("Сообщение об успешной смене логина отправлено");
+            logger.info("Сообщение об успешной смене логина отправлено");
         }
     }
 
@@ -75,22 +78,22 @@ public class ClientHandler implements Runnable{
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 String text = inp.readUTF();
-                System.out.printf("Message from user %s: %s%n", login, text);
+                logger.info(String.format("Message from user %s: %s%n", login, text));
 
-                System.out.println("New message " + text);
+                logger.info("New message " + text);
                 TextMessage msg = parseTextMessageRegx(text, login);
                 if (msg != null) {
                     msg.swapUsers();
                     chatServer.sendMessage(msg);
                 } else if (text.equals(DISCONNECT)) {
-                    System.out.printf("User %s is disconnected%n", login);
+                    logger.info(String.format("User %s is disconnected%n", login));
                     chatServer.unsubscribe(login);
                     return;
                 } else if (text.equals(USER_LIST_TAG)) {
-                    System.out.printf("Sending user list to %s%n", login);
+                    logger.info(String.format("Sending user list to %s%n", login));
                     sendUserList(chatServer.getUserList());
                 } else if (text.startsWith(CHANGE_TAG)) {
-                    System.out.printf("Change login request from %s: %s", login, text);
+                    logger.info(String.format("Change login request from %s: %s", login, text));
                     try {
                         chatServer.changeLogin(text);
 
@@ -99,7 +102,7 @@ public class ClientHandler implements Runnable{
                     }
 
                 } else {
-                    System.out.println("Unknown message: " + text);
+                    logger.info("Unknown message: " + text);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
